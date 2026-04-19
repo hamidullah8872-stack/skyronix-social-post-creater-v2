@@ -155,18 +155,18 @@ export async function generateResearchPlan(topic: string) {
       
       const response = await ai.models.generateContent({
         model: modelId,
-        contents: `Research task: Create a comprehensive 30-day social media content strategy for: "${topic}". 
-        
-        CRITICAL REAL-TIME REQUIREMENTS:
-        1. LIVE 2026 DATA: You MUST research and incorporate current market trends, viral hooks, and real-time news for ${currentMonth} ${currentYear}.
-        2. GOOGLE SEARCH: Effectively use your research tools to find what is trending on social media RIGHT NOW in ${currentYear}.
-        3. HUMAN-WRITTEN STYLE: Avoid generic AI-sounding phrases.
-        4. LONGER POSTS: Each 'postContent' must be substantial (at least 3-4 paragraphs), including hashtags and a clear call-to-action.
-        5. STRATEGIC JOURNEY: The 30 days should take the audience from awareness to trust to conversion.`,
+        contents: `STRATEGIC TASK: Generate a 30-day "Viral Velocity" social media strategy for: "${topic}".
+
+        CORE OBJECTIVES:
+        1. 2026 TREND INJECTION: Conduct deep research using Google Search to identify EXACT viral trends, sounds, and news topics happening in ${currentMonth} ${currentYear}. 
+        2. VIRAL PSYCHOLOGY: Design every 'idea' and 'theme' around high-retention hooks (e.g., The "New Paradigm" of..., Why [Competitor Style] is failing in 2026, The secret to [Result] without [Pain]).
+        3. HUMAN-ONLY TONE: The 'postContent' MUST be written in a "No-AI" style. Use sentence fragments for rhythm, personal anecdotes, provocative questions, and high-energy vocabulary. ZERO generic phrases like "In today's fast-paced world" or "Unlock your potential".
+        4. SUBSTANTIAL VALUE: Each post must be a "Mini-Article" (300+ words) with a clear, aggressive Hook, deep Value Body, and a high-conversion Call to Action.
+        5. PLATFORM SPECIFIC: Optimize the strategy to be versatile for LinkedIn, Instagram (CapCut trends), and X (Threads).`,
         config: {
           tools: [{ googleSearch: {} }],
           responseMimeType: "application/json",
-          systemInstruction: "You are a Social Media Strategist. Your output must be a JSON object containing a 'plan' array. Each item in 'plan' must have: 'day' (number 1-30), 'theme' (short phase title), 'idea' (the core concept incorporating a current trend), and 'postContent' (a long, professional post).",
+          systemInstruction: "You are the world's highest-paid Social Media Growth Hacker. You don't just write posts; you build VIRAL MOVEMENTS. You use real-time research to identify what people are obsessing over RIGHT NOW. Your output is a JSON 'plan' array. Each item MUST have: 'day' (1-30), 'theme' (a viral angle), 'idea' (the specific hook/trend context), and 'postContent' (a 3-4 paragraph banger that sounds 100% human and personal).",
           responseSchema: {
             type: Type.OBJECT,
             properties: {

@@ -19,11 +19,12 @@ import {
   Camera
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
-import { AppMode, MarkhorData, SkyronixData, GeneralData, ResearchData } from './types';
+import { AppMode, MarkhorData, SkyronixData, GeneralData, ResearchData, CompetitionData, Participant } from './types';
 import MarkhorTalent from './components/MarkhorTalent';
 import Skyronix from './components/Skyronix';
 import GeneralCreator from './components/GeneralCreator';
 import ResearchCreator from './components/ResearchCreator';
+import CompetitionTemplate from './components/CompetitionTemplate';
 import { generateAIText, generateSkyronixPoints, chatWithAI, generateImage, generateResearchPlan } from './lib/gemini';
 
 export default function App() {
@@ -115,6 +116,25 @@ export default function App() {
     topic: "",
     plan: [],
     status: 'idle'
+  });
+
+  // Competition State
+  const [competition, setCompetition] = useState<CompetitionData>({
+    title: "VOTE FOR YOUR TRUSTED",
+    mainHeading: "FREELANCER",
+    subHeading: "HURRY! VOTING ENDS WITHIN 48 HOURS",
+    participants: [
+      { id: 1, name: "Tanzila Fatima", image: null },
+      { id: 2, name: "Esha Nawaz", image: null },
+      { id: 3, name: "Saleha Azhar", image: null }
+    ],
+    bottomDescription: "All nominees have similar followers & skills, making the vote exciting. Every freelancer is talented, but only your choice decides who shines. Vote within 48 hours and support your favorite today!",
+    timerText: "ONLY 48 HOURS ARE LEFT",
+    footerWebsite: "geniusprofiles.com",
+    footerPhone: "+971 50 248 1349",
+    footerEmail: "hello@geniusprofiles.com",
+    logo: null,
+    aspectRatio: '1/1'
   });
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, callback: (url: string) => void) => {
@@ -315,6 +335,13 @@ export default function App() {
                   <Bot size={18} className={mode === 'general' ? 'text-white' : ''} />
                   <span className="text-sm">General Mode</span>
                 </button>
+                <button 
+                  onClick={() => { setMode('competition'); if(windowWidth < 1024) setIsSidebarOpen(false); }}
+                  className={`w-full flex items-center gap-4 px-5 py-3 rounded-xl transition-all duration-300 ${mode === 'competition' ? 'nav-item-active text-white font-semibold' : 'hover:bg-white/5 text-neutral-400'}`}
+                >
+                  <Plus size={18} className={mode === 'competition' ? 'text-aqua-primary' : ''} />
+                  <span className="text-sm">Competition</span>
+                </button>
               </div>
             </div>
 
@@ -507,6 +534,150 @@ export default function App() {
                     </div>
                   </div>
                 )}
+
+                {mode === 'competition' && (
+                  <div className="space-y-6">
+                    <div className="glass-card p-6 rounded-[20px] space-y-4">
+                      <h3 className="text-sm font-bold text-white/90">Platform Compatibility</h3>
+                      <div className="flex gap-2 p-1 bg-black/20 rounded-xl">
+                        {[
+                          { id: '1/1', label: 'Square', sub: '1:1' },
+                          { id: '4/5', label: 'FB/IG Portrait', sub: '4:5' },
+                          { id: '9/16', label: 'TikTok/Story', sub: '9:16' }
+                        ].map((ratio) => (
+                          <button 
+                            key={ratio.id}
+                            onClick={() => setCompetition({...competition, aspectRatio: ratio.id as any})}
+                            className={`flex-1 flex flex-col items-center py-2 rounded-lg transition-all ${competition.aspectRatio === ratio.id ? 'bg-white/10 text-white shadow-lg' : 'bg-transparent text-neutral-500 hover:text-neutral-300'}`}
+                          >
+                            <span className="text-[9px] font-black uppercase tracking-tight">{ratio.label}</span>
+                            <span className="text-[8px] opacity-50">{ratio.sub}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="glass-card p-6 rounded-[20px] space-y-4">
+                      <h3 className="text-sm font-bold text-white/90">Identity & Logo</h3>
+                      <label className="block">
+                        <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">Main Logo</span>
+                        <input type="file" className="mt-2 block w-full text-xs text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-white/10 file:text-white hover:file:bg-white/20" onChange={(e) => handleImageUpload(e, (url) => setCompetition({...competition, logo: url}))} />
+                      </label>
+                    </div>
+
+                    <div className="glass-card p-6 rounded-[20px] space-y-4">
+                      <h3 className="text-sm font-bold text-white/90">Headings</h3>
+                      <label className="block">
+                        <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">Top Title</span>
+                        <input 
+                          value={competition.title}
+                          onChange={(e) => setCompetition({...competition, title: e.target.value})}
+                          className="mt-2 w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm focus:border-aqua-primary outline-none transition-all"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">Main Heading</span>
+                        <input 
+                          value={competition.mainHeading}
+                          onChange={(e) => setCompetition({...competition, mainHeading: e.target.value})}
+                          className="mt-2 w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm focus:border-aqua-primary outline-none transition-all"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">Sub Heading</span>
+                        <input 
+                          value={competition.subHeading}
+                          onChange={(e) => setCompetition({...competition, subHeading: e.target.value})}
+                          className="mt-2 w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm focus:border-aqua-primary outline-none transition-all"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="glass-card p-6 rounded-[20px] space-y-4">
+                      <h3 className="text-sm font-bold text-white/90">Participants ({competition.participants.length}/7)</h3>
+                      <div className="space-y-4">
+                        {competition.participants.map((p, idx) => (
+                          <div key={idx} className="p-3 bg-black/20 rounded-xl border border-white/5 space-y-3">
+                             <div className="flex items-center justify-between">
+                               <span className="text-[10px] font-bold text-aqua-primary uppercase">Participant #{p.id}</span>
+                               <button 
+                                 onClick={() => {
+                                   const newParts = competition.participants.filter((_, i) => i !== idx).map((item, i) => ({...item, id: i + 1}));
+                                   setCompetition({...competition, participants: newParts});
+                                 }}
+                                 className="text-white/20 hover:text-red-500 transition-colors"
+                               >
+                                 <X size={12} />
+                               </button>
+                             </div>
+                             <input 
+                                value={p.name}
+                                onChange={(e) => {
+                                  const newParts = [...competition.participants];
+                                  newParts[idx].name = e.target.value;
+                                  setCompetition({...competition, participants: newParts});
+                                }}
+                                placeholder="Name"
+                                className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-xs outline-none"
+                             />
+                             <div className="flex items-center gap-3">
+                                <div className="h-8 w-8 bg-black/40 rounded-full border border-white/10 overflow-hidden flex items-center justify-center">
+                                  {p.image ? <img src={p.image} className="w-full h-full object-cover" /> : <Camera size={12} className="text-white/20" />}
+                                </div>
+                                <input 
+                                  type="file" 
+                                  className="flex-1 text-[10px] text-white/40 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[9px] file:bg-white/10 file:text-white"
+                                  onChange={(e) => handleImageUpload(e, (url) => {
+                                    const newParts = [...competition.participants];
+                                    newParts[idx].image = url;
+                                    setCompetition({...competition, participants: newParts});
+                                  })}
+                                />
+                             </div>
+                          </div>
+                        ))}
+                        
+                        {competition.participants.length < 7 && (
+                          <button 
+                            onClick={() => {
+                              setCompetition({
+                                ...competition, 
+                                participants: [...competition.participants, { id: competition.participants.length + 1, name: "", image: null }]
+                              });
+                            }}
+                            className="w-full py-3 border border-dashed border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-white/40 hover:border-aqua-primary hover:text-aqua-primary transition-all"
+                          >
+                            + Add Participant
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="glass-card p-6 rounded-[20px] space-y-4">
+                      <h3 className="text-sm font-bold text-white/90">Footer Details</h3>
+                      <label className="block">
+                        <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">Description</span>
+                        <textarea 
+                          value={competition.bottomDescription}
+                          onChange={(e) => setCompetition({...competition, bottomDescription: e.target.value})}
+                          className="mt-2 w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm focus:border-aqua-primary outline-none transition-all h-20"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">Timer Label</span>
+                        <input 
+                          value={competition.timerText}
+                          onChange={(e) => setCompetition({...competition, timerText: e.target.value})}
+                          className="mt-2 w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm focus:border-aqua-primary outline-none transition-all"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">Phone</span>
+                        <input value={competition.footerPhone} onChange={(e) => setCompetition({...competition, footerPhone: e.target.value})} className="mt-2 w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm focus:border-aqua-primary outline-none transition-all" />
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -581,6 +752,7 @@ export default function App() {
                    {mode === 'skyronix' && <Skyronix data={skyronix} containerRef={previewRef} />}
                    {mode === 'research' && <ResearchCreator data={research} onGenerate={handleGenerateResearch} isProcessing={isProcessing} containerRef={previewRef} />}
                    {mode === 'general' && <GeneralCreator data={general} containerRef={previewRef} onSend={(text) => handleGenerateGeneral(text)} isProcessing={isProcessing} />}
+                   {mode === 'competition' && <CompetitionTemplate data={competition} containerRef={previewRef} />}
                   </div>
                </div>
               </div>
@@ -588,9 +760,10 @@ export default function App() {
                <div className="flex items-center gap-10 opacity-40 grayscale group-hover:grayscale-0 transition-all">
                 <div className="text-center">
                    <span className="block text-[10px] font-bold uppercase tracking-widest mb-1">Format</span>
-                   <span className="text-sm font-medium">
+                    <span className="text-sm font-medium">
                      {mode === 'markhor' ? (markhor.aspectRatio === '9/16' ? '1080 x 1920' : '1080 x 1350') : 
                       mode === 'skyronix' ? (skyronix.aspectRatio === '9/16' ? '1080 x 1920' : skyronix.aspectRatio === '4/5' ? '1080 x 1350' : '1080 x 1080') :
+                      mode === 'competition' ? '1200 x 1200' :
                       'Various'}
                    </span>
                 </div>
@@ -600,6 +773,7 @@ export default function App() {
                    <span className="text-sm font-medium">
                      {mode === 'markhor' ? (markhor.aspectRatio === '9/16' ? '9:16 vertical' : '4:5 Portrait') :
                       mode === 'skyronix' ? (skyronix.aspectRatio === '9/16' ? '9:16 Story' : skyronix.aspectRatio === '4/5' ? '4:5 Portrait' : '1:1 Square') :
+                      mode === 'competition' ? '1:1 Square' :
                       'Adaptive'}
                    </span>
                 </div>

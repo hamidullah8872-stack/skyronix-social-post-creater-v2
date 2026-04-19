@@ -1,4 +1,24 @@
-export type AppMode = 'markhor' | 'skyronix' | 'general' | 'research';
+export type AppMode = 'markhor' | 'skyronix' | 'general' | 'research' | 'competition';
+
+export interface Participant {
+  id: number;
+  name: string;
+  image: string | null;
+}
+
+export interface CompetitionData {
+  title: string;
+  mainHeading: string;
+  subHeading: string;
+  participants: Participant[];
+  bottomDescription: string;
+  timerText: string;
+  footerWebsite: string;
+  footerPhone: string;
+  footerEmail: string;
+  logo: string | null;
+  aspectRatio: '1/1' | '4/5' | '9/16';
+}
 
 export interface MarkhorData {
   personImage: string | null;

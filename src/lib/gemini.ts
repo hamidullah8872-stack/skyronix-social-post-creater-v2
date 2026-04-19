@@ -72,7 +72,18 @@ async function tryGenerate(
 
 export async function generateSkyronixPoints(content: string) {
   checkApiKey();
-  const prompt = `Analyze this text and extract precisely in JSON: title, subHeadline, points (list with title, description, iconType), and a summary. TEXT: ${content}`;
+  const prompt = `CORE STRATEGIC TASK: Analyze the following narrative and extract a high-impact "Battle Plan" for a viral social media post.
+  
+  ANALYSIS GUIDELINES:
+  1. TITLES: Create a Provocative, High-Energy main title (max 5 words) and a subHeadline that builds massive curiosity.
+  2. ALL MAIN POINTS: Extract 3-6 "Neural Points" capturing ALL critical insights. For each, provide a short, punchy 'title' and an EXTREMELY concise 'description' (max 12 words) to ensure they fit the design.
+  3. ICON MAPPING: Assign one of these iconTypes: shield, diamond, star, rocket, check, lightbulb, zap, target, trophy, award, laptop, globe, trending, search, activity, cpu.
+  4. EXECUTIVE SUMMARY: Write a "Killer Closer" summary. It MUST be a complete, powerful sentence (max 22 words). DO NOT STOP MID-SENTENCE.
+  5. TONE: Extreme quality, high-status, growth hacker personality.
+  
+  THEME CONTEXT: The design is Ultra-Premium Golden & Aqua.
+  
+  TEXT TO ANALYZE: "${content}"`;
   
   return await tryGenerate(
     ["gemini-3.1-flash-lite-preview", "gemini-3-flash-preview"],

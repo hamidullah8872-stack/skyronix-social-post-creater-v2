@@ -87,16 +87,16 @@ export default function MarkhorTalent({ data, containerRef }: Props) {
         <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-white/40 to-transparent blur-[1px]" />
         
         {/* Main Content Area: Centered and adjustable */}
-        <div className="flex-1 w-full flex flex-col items-center justify-center min-h-0 gap-3 md:gap-6">
+        <div className="flex-1 w-full flex flex-col items-center justify-center min-h-0 px-2">
           <motion.div
              initial={{ opacity: 0, scale: 0.95 }}
              animate={{ opacity: 1, scale: 1 }}
-             className="w-full overflow-y-auto custom-scrollbar flex flex-col items-center justify-center px-2"
+             className="w-full overflow-y-auto custom-scrollbar flex flex-col items-center justify-center px-4"
           >
-            <div className={`text-white font-display font-black leading-[1.05] drop-shadow-2xl uppercase break-words
+            <div className={`text-white font-display font-black leading-[1.1] drop-shadow-2xl uppercase break-words text-center
               ${data.aspectRatio === '9/16' 
-                ? 'text-[clamp(14px,4vw,28px)] leading-[1.1]' 
-                : 'text-xl md:text-2xl xl:text-3xl'}`}
+                ? 'text-4xl md:text-5xl' 
+                : 'text-3xl md:text-4xl'}`}
             >
               {renderTextWithHighlights(data.content)}
             </div>
@@ -104,7 +104,7 @@ export default function MarkhorTalent({ data, containerRef }: Props) {
         </div>
 
         {/* Social Media Icons: Always at the bottom of the section */}
-        <div className="w-full flex items-center justify-center gap-3 md:gap-6 pt-4 pb-2">
+        <div className="w-full flex items-center justify-center gap-4 md:gap-8 pt-4 pb-4">
            {[
              { Icon: Facebook, color: 'bg-gold-primary' },
              { Icon: Instagram, color: 'bg-gold-primary' },

@@ -1,4 +1,23 @@
-export type AppMode = 'markhor' | 'skyronix' | 'general' | 'research' | 'competition';
+export type AppMode = 'markhor' | 'skyronix' | 'general' | 'research' | 'competition' | 'tracker';
+
+export interface ProfileResult {
+  name: string;
+  url: string;
+  headline: string;
+  location: string;
+  isVerified?: boolean;
+}
+
+export interface TrackerData {
+  platform: 'facebook' | 'linkedin';
+  topic: string;
+  recognition: string;
+  location: string;
+  followerCount: string;
+  results: ProfileResult[];
+  searchHistory: string[];
+  status: 'idle' | 'searching' | 'completed' | 'error';
+}
 
 export interface Participant {
   id: number;
@@ -18,6 +37,10 @@ export interface CompetitionData {
   footerEmail: string;
   logo: string | null;
   aspectRatio: '1/1' | '4/5' | '9/16';
+  participantSize: number;
+  participantSpacing: number;
+  logoSize: number;
+  competitionType: 'weekly' | 'winners';
 }
 
 export interface MarkhorData {
@@ -32,7 +55,7 @@ export interface MarkhorData {
 export interface SkyronixPoint {
   title: string;
   description: string;
-  iconType: 'shield' | 'diamond' | 'star' | 'rocket' | 'check' | 'lightbulb';
+  iconType: 'shield' | 'diamond' | 'star' | 'rocket' | 'check' | 'lightbulb' | 'zap' | 'target' | 'trophy' | 'award' | 'laptop' | 'globe' | 'trending' | 'search' | 'activity' | 'cpu';
 }
 
 export interface SkyronixData {
@@ -71,4 +94,7 @@ export interface ResearchData {
   topic: string;
   plan: ResearchDay[];
   status: 'idle' | 'generating' | 'completed' | 'error';
+  viewMode: 'research' | 'series';
+  dayCount: 30 | 100;
+  extraInstructions?: string;
 }

@@ -159,7 +159,7 @@ export async function generateImage(prompt: string) {
 export async function generateResearchPlan(topic: string) {
   checkApiKey();
   return await tryGenerate(
-    ["gemini-3.1-pro-preview", "gemini-3-flash-preview"],
+    ["gemini-3-flash-preview", "gemini-3.1-pro-preview"],
     async (modelId) => {
       const currentYear = new Date().getFullYear();
       const currentMonth = new Date().toLocaleString('default', { month: 'long' });
@@ -167,17 +167,72 @@ export async function generateResearchPlan(topic: string) {
       const response = await ai.models.generateContent({
         model: modelId,
         contents: `STRATEGIC TASK: Generate a 30-day "Viral Velocity" social media strategy for: "${topic}".
-
+ 
         CORE OBJECTIVES:
-        1. 2026 TREND INJECTION: Conduct deep research using Google Search to identify EXACT viral trends, sounds, and news topics happening in ${currentMonth} ${currentYear}. 
-        2. VIRAL PSYCHOLOGY: Design every 'idea' and 'theme' around high-retention hooks (e.g., The "New Paradigm" of..., Why [Competitor Style] is failing in 2026, The secret to [Result] without [Pain]).
-        3. HUMAN-ONLY TONE: The 'postContent' MUST be written in a "No-AI" style. Use sentence fragments for rhythm, personal anecdotes, provocative questions, and high-energy vocabulary. ZERO generic phrases like "In today's fast-paced world" or "Unlock your potential".
-        4. SUBSTANTIAL VALUE: Each post must be a "Mini-Article" (300+ words) with a clear, aggressive Hook, deep Value Body, and a high-conversion Call to Action.
-        5. PLATFORM SPECIFIC: Optimize the strategy to be versatile for LinkedIn, Instagram (CapCut trends), and X (Threads).`,
+        1. REAL-TIME TRENDS: Identify viral trends and sounds for ${currentMonth} ${currentYear}. 
+        2. VIRAL PSYCHOLOGY: Design high-retention hooks (e.g., The "New Paradigm" of..., Why [Competitor Style] is failing).
+        3. HUMAN TONE: Post content must be "No-AI" style. Sentence fragments, provocative questions, high energy.
+        4. CONCISE IMPACT: Each post should be 1-2 powerful paragraphs (100-150 words) with a Hook, Value, and CTA. 
+        5. PLATFORM VERSATILE: Works for IG/TikTok (vertical) and LinkedIn/X text.`,
         config: {
           tools: [{ googleSearch: {} }],
           responseMimeType: "application/json",
-          systemInstruction: "You are the world's highest-paid Social Media Growth Hacker. You don't just write posts; you build VIRAL MOVEMENTS. You use real-time research to identify what people are obsessing over RIGHT NOW. Your output is a JSON 'plan' array. Each item MUST have: 'day' (1-30), 'theme' (a viral angle), 'idea' (the specific hook/trend context), and 'postContent' (a 3-4 paragraph banger that sounds 100% human and personal).",
+          systemInstruction: "You are an elite Social Media Growth Hacker. Output a JSON 'plan' array. Each item MUST have: 'day' (1-30), 'theme', 'idea' (the viral hook), and 'postContent' (1-2 paragraphs of high-impact, human-sounding copy). Be concise but extremely valuable.",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              plan: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    day: { type: Type.NUMBER },
+                    theme: { type: Type.STRING },
+                    idea: { type: Type.STRING },
+                    postContent: { type: Type.STRING }
+                  },
+                  required: ["day", "theme", "idea", "postContent"]
+                }
+              }
+            },
+            required: ["plan"]
+          }
+        }
+      });
+      
+      const data = JSON.parse(response.text.trim());
+      return data.plan;
+    }
+  );
+}
+
+export async function generateSeriesPlan(topic: string, dayCount: number, extraInstructions: string = "") {
+  checkApiKey();
+  return await tryGenerate(
+    ["gemini-3-flash-preview", "gemini-3.1-pro-preview"],
+    async (modelId) => {
+      const currentYear = new Date().getFullYear();
+      
+      const response = await ai.models.generateContent({
+        model: modelId,
+        contents: `STRATEGIC TASK: Create a comprehensive ${dayCount}-day "Social Media Course/Series" titled with the topic: "${topic}".
+ 
+        SPECIFIC INSTRUCTIONS: ${extraInstructions}
+ 
+        SERIES ARCHITECTURE:
+        1. PROGRESSIVE LEARNING: Day 1 starts with basic logic; Day ${dayCount} ends with mastery.
+        2. HUMAN-WRITTEN VIRALITY: Every post MUST sound like a real person, not an AI. Use conversational hooks, industry secrets, and "unpopular opinions" to spark engagement.
+        3. PRACTICAL & VALUABLE: Provide actual steps, frameworks, or "cheat codes" readers can use immediately.
+        4. ALGORITHM RESISTANT: Avoid AI clichés. Use rhythmic pacing, sentence fragments, and personal-styled insights.
+        5. CONCISE IMPACT: Each post should be ~150 words of high-impact value. 
+
+        Output ${dayCount} items in the JSON 'plan' array.`,
+        config: {
+          responseMimeType: "application/json",
+          systemInstruction: `You are an elite educator and growth hacker. Respond with valid JSON. 
+          The 'plan' array should contain ${dayCount} items. 
+          Each item: {'day': number, 'theme': 'The lesson title', 'idea': 'The viral angle', 'postContent': 'The actual human-written post copy'}. 
+          Ensure the content is up-to-date for ${currentYear}.`,
           responseSchema: {
             type: Type.OBJECT,
             properties: {
@@ -219,6 +274,54 @@ export async function chatWithAI(messages: any[]) {
         }
       });
       return response.text;
+    }
+  );
+}
+
+export async function searchProfiles(platform: string, topic: string, recognition: string, location: string, followers: string, excludeUrls: string[] = []) {
+  checkApiKey();
+  const excludeText = excludeUrls.length > 0 ? ` DO NOT return any of these URLs: ${excludeUrls.join(', ')}.` : "";
+  const query = `Find ${platform} profiles for: Topic: ${topic}, Role: ${recognition}, Location: ${location}, Followers: ${followers}.${excludeText}`;
+  
+  return await tryGenerate(
+    ["gemini-3-flash-preview", "gemini-3.1-pro-preview"],
+    async (modelId) => {
+      const response = await ai.models.generateContent({
+        model: modelId,
+        contents: query,
+        config: {
+          tools: [{ googleSearch: {} }],
+          responseMimeType: "application/json",
+          systemInstruction: `You are a professional profile tracker. Perform a Google Search to find ACTUAL and REAL ${platform} profile links matching the user's criteria. 
+          Return a JSON 'results' array with up to 10 unique and NEW items.
+          Please provide a MIX of both verified (high-status) and unverified (emerging) profile links.
+          Each item MUST have: 'name', 'url' (direct link to profile), 'headline' (job title or bio snippet), 'location', and 'isVerified' (boolean).
+          CRITICAL: Ensure ALL urls start with https:// and are direct profile links.`,
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              results: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    name: { type: Type.STRING },
+                    url: { type: Type.STRING },
+                    headline: { type: Type.STRING },
+                    location: { type: Type.STRING },
+                    isVerified: { type: Type.BOOLEAN }
+                  },
+                  required: ["name", "url", "headline", "location", "isVerified"]
+                }
+              }
+            },
+            required: ["results"]
+          }
+        }
+      });
+      
+      const data = JSON.parse(response.text.trim());
+      return data.results;
     }
   );
 }

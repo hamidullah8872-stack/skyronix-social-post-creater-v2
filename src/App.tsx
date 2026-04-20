@@ -16,16 +16,18 @@ import {
   Upload,
   RefreshCw,
   MessageSquare,
-  Camera
+  Camera,
+  UserCheck
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
-import { AppMode, MarkhorData, SkyronixData, GeneralData, ResearchData, CompetitionData, Participant } from './types';
+import { AppMode, MarkhorData, SkyronixData, GeneralData, ResearchData, CompetitionData, Participant, TrackerData } from './types';
 import MarkhorTalent from './components/MarkhorTalent';
 import Skyronix from './components/Skyronix';
 import GeneralCreator from './components/GeneralCreator';
 import ResearchCreator from './components/ResearchCreator';
 import CompetitionTemplate from './components/CompetitionTemplate';
-import { generateAIText, generateSkyronixPoints, chatWithAI, generateImage, generateResearchPlan } from './lib/gemini';
+import ProfileTracker from './components/ProfileTracker';
+import { generateAIText, generateSkyronixPoints, chatWithAI, generateImage, generateResearchPlan, generateSeriesPlan, searchProfiles } from './lib/gemini';
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>('markhor');
@@ -115,26 +117,47 @@ export default function App() {
   const [research, setResearch] = useState<ResearchData>({
     topic: "",
     plan: [],
-    status: 'idle'
+    status: 'idle',
+    viewMode: 'research',
+    dayCount: 30
   });
 
   // Competition State
   const [competition, setCompetition] = useState<CompetitionData>({
-    title: "VOTE FOR YOUR TRUSTED",
-    mainHeading: "FREELANCER",
+    title: "VOTE FOR YOUR TOP WEEKLY",
+    mainHeading: "TALENT",
     subHeading: "HURRY! VOTING ENDS WITHIN 48 HOURS",
     participants: [
       { id: 1, name: "Tanzila Fatima", image: null },
       { id: 2, name: "Esha Nawaz", image: null },
-      { id: 3, name: "Saleha Azhar", image: null }
+      { id: 3, name: "Saleha Azhar", image: null },
+      { id: 4, name: "Amna Khan", image: null },
+      { id: 5, name: "Zainab Ali", image: null },
+      { id: 6, name: "Sana Ahmed", image: null },
+      { id: 7, name: "Hira Malik", image: null }
     ],
-    bottomDescription: "All nominees have similar followers & skills, making the vote exciting. Every freelancer is talented, but only your choice decides who shines. Vote within 48 hours and support your favorite today!",
+    bottomDescription: "all nominees are talented, but only your vote will decide who is the winner, support your favorite today.",
     timerText: "ONLY 48 HOURS ARE LEFT",
-    footerWebsite: "geniusprofiles.com",
-    footerPhone: "+971 50 248 1349",
-    footerEmail: "hello@geniusprofiles.com",
+    footerWebsite: "markhortalenthub.com",
+    footerPhone: "+92 311 491 8272",
+    footerEmail: "markhortalenthub@gmail.com",
     logo: null,
-    aspectRatio: '1/1'
+    aspectRatio: '1/1',
+    participantSize: 100,
+    participantSpacing: 16,
+    logoSize: 100,
+    competitionType: 'weekly'
+  });
+
+  const [tracker, setTracker] = useState<TrackerData>({
+    platform: 'facebook',
+    topic: '',
+    recognition: '',
+    location: '',
+    followerCount: '',
+    results: [],
+    searchHistory: [],
+    status: 'idle'
   });
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, callback: (url: string) => void) => {
@@ -245,7 +268,7 @@ export default function App() {
   const handleGenerateResearch = async (topic: string) => {
     if (!topic) return;
     setIsProcessing(true);
-    setResearch(prev => ({ ...prev, topic, status: 'generating' }));
+    setResearch(prev => ({ ...prev, topic, status: 'generating', viewMode: 'research' }));
     
     try {
       const plan = await generateResearchPlan(topic);
@@ -258,7 +281,50 @@ export default function App() {
       console.error('Research mode error:', err);
       setResearch(prev => ({ ...prev, status: 'error' }));
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      alert(`Research Analysis Error: ${errorMessage}\n\nPlease reach out to support if this persists.`);
+      alert(`Research Analysis Error: ${errorMessage}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleGenerateSeries = async (topic: string, days: 30 | 100, instructions: string) => {
+    if (!topic) return;
+    setIsProcessing(true);
+    setResearch(prev => ({ ...prev, topic, status: 'generating', viewMode: 'series', dayCount: days, extraInstructions: instructions }));
+    
+    try {
+      const plan = await generateSeriesPlan(topic, days, instructions);
+      setResearch(prev => ({ 
+        ...prev, 
+        plan, 
+        status: 'completed'
+      }));
+    } catch (err) {
+      console.error('Series mode error:', err);
+      setResearch(prev => ({ ...prev, status: 'error' }));
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      alert(`Series Generation Error: ${errorMessage}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleTrackerSearch = async (platform: 'facebook' | 'linkedin', topic: string, recognition: string, location: string, followers: string) => {
+    setIsProcessing(true);
+    setTracker(prev => ({ ...prev, platform, topic, recognition, location, followerCount: followers, status: 'searching' }));
+    
+    try {
+      const results = await searchProfiles(platform, topic, recognition, location, followers, tracker.searchHistory);
+      setTracker(prev => ({ 
+        ...prev, 
+        results, 
+        searchHistory: [...prev.searchHistory, ...results.map(r => r.url)],
+        status: 'completed'
+      }));
+    } catch (err) {
+      console.error('Tracker error:', err);
+      setTracker(prev => ({ ...prev, status: 'error' }));
+      alert(`Profile Search Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsProcessing(false);
     }
@@ -306,42 +372,27 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="space-y-3">
-                <button 
-                  onClick={() => { setMode('markhor'); if(windowWidth < 1024) setIsSidebarOpen(false); }}
-                  className={`w-full flex items-center gap-4 px-5 py-3 rounded-xl transition-all duration-300 ${mode === 'markhor' ? 'nav-item-active text-white font-semibold' : 'hover:bg-white/5 text-neutral-400'}`}
-                >
-                  <Zap size={18} className={mode === 'markhor' ? 'text-gold-primary' : ''} />
-                  <span className="text-sm">Markhor Talent</span>
-                </button>
-                <button 
-                  onClick={() => { setMode('skyronix'); if(windowWidth < 1024) setIsSidebarOpen(false); }}
-                  className={`w-full flex items-center gap-4 px-5 py-3 rounded-xl transition-all duration-300 ${mode === 'skyronix' ? 'nav-item-active text-white font-semibold' : 'hover:bg-white/5 text-neutral-400'}`}
-                >
-                  <Cpu size={18} className={mode === 'skyronix' ? 'text-aqua-primary' : ''} />
-                  <span className="text-sm">Skyronix AI</span>
-                </button>
-                <button 
-                  onClick={() => { setMode('research'); if(windowWidth < 1024) setIsSidebarOpen(false); }}
-                  className={`w-full flex items-center gap-4 px-5 py-3 rounded-xl transition-all duration-300 ${mode === 'research' ? 'nav-item-active text-white font-semibold' : 'hover:bg-white/5 text-neutral-400'}`}
-                >
-                  <Search size={18} className={mode === 'research' ? 'text-[#ff4e00]' : ''} />
-                  <span className="text-sm">Skyronix Research</span>
-                </button>
-                <button 
-                  onClick={() => { setMode('general'); if(windowWidth < 1024) setIsSidebarOpen(false); }}
-                  className={`w-full flex items-center gap-4 px-5 py-3 rounded-xl transition-all duration-300 ${mode === 'general' ? 'nav-item-active text-white font-semibold' : 'hover:bg-white/5 text-neutral-400'}`}
-                >
-                  <Bot size={18} className={mode === 'general' ? 'text-white' : ''} />
-                  <span className="text-sm">General Mode</span>
-                </button>
-                <button 
-                  onClick={() => { setMode('competition'); if(windowWidth < 1024) setIsSidebarOpen(false); }}
-                  className={`w-full flex items-center gap-4 px-5 py-3 rounded-xl transition-all duration-300 ${mode === 'competition' ? 'nav-item-active text-white font-semibold' : 'hover:bg-white/5 text-neutral-400'}`}
-                >
-                  <Plus size={18} className={mode === 'competition' ? 'text-aqua-primary' : ''} />
-                  <span className="text-sm">Competition</span>
-                </button>
+              <div className="grid grid-cols-3 gap-2 px-6 mb-6">
+                {[
+                  { id: 'markhor', icon: Zap, label: 'Markhor', color: 'text-gold-primary' },
+                  { id: 'skyronix', icon: Cpu, label: 'Skyronix', color: 'text-aqua-primary' },
+                  { id: 'research', icon: Search, label: 'Research', color: 'text-[#ff4e00]' },
+                  { id: 'general', icon: Bot, label: 'General', color: 'text-white' },
+                  { id: 'competition', icon: Plus, label: 'Compete', color: 'text-aqua-primary' },
+                  { id: 'tracker', icon: UserCheck, label: 'Tracker', color: 'text-aqua-primary' }
+                ].map((item) => (
+                  <button 
+                    key={item.id}
+                    onClick={() => { setMode(item.id as any); if(windowWidth < 1024) setIsSidebarOpen(false); }}
+                    title={item.label}
+                    className={`flex flex-col items-center justify-center p-2.5 rounded-xl transition-all duration-300 border ${mode === item.id ? 'bg-white/10 border-white/20 shadow-lg' : 'bg-transparent border-transparent text-neutral-500 hover:bg-white/5 hover:text-neutral-300'}`}
+                  >
+                    <item.icon size={18} className={mode === item.id ? item.color : ''} />
+                    <span className="text-[8px] font-black uppercase tracking-tighter mt-1 opacity-60">
+                      {item.label}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -538,12 +589,30 @@ export default function App() {
                 {mode === 'competition' && (
                   <div className="space-y-6">
                     <div className="glass-card p-6 rounded-[20px] space-y-4">
+                      <h3 className="text-sm font-bold text-white/90">Competition Mode</h3>
+                      <div className="flex gap-2 p-1 bg-black/20 rounded-xl">
+                        {[
+                          { id: 'weekly', label: 'Weekly Voting' },
+                          { id: 'winners', label: 'Winners Circle' }
+                        ].map((type) => (
+                          <button 
+                            key={type.id}
+                            onClick={() => setCompetition({...competition, competitionType: type.id as any})}
+                            className={`flex-1 py-3 rounded-lg transition-all text-[10px] font-black uppercase tracking-widest ${competition.competitionType === type.id ? 'bg-aqua-primary text-black shadow-lg shadow-aqua-primary/20' : 'bg-transparent text-neutral-500 hover:text-neutral-300'}`}
+                          >
+                            {type.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="glass-card p-6 rounded-[20px] space-y-4">
                       <h3 className="text-sm font-bold text-white/90">Platform Compatibility</h3>
                       <div className="flex gap-2 p-1 bg-black/20 rounded-xl">
                         {[
                           { id: '1/1', label: 'Square', sub: '1:1' },
                           { id: '4/5', label: 'FB/IG Portrait', sub: '4:5' },
-                          { id: '9/16', label: 'TikTok/Story', sub: '9:16' }
+                          ...(competition.competitionType === 'weekly' ? [{ id: '9/16', label: 'TikTok/Story', sub: '9:16' }] : [])
                         ].map((ratio) => (
                           <button 
                             key={ratio.id}
@@ -558,10 +627,43 @@ export default function App() {
                     </div>
 
                     <div className="glass-card p-6 rounded-[20px] space-y-4">
-                      <h3 className="text-sm font-bold text-white/90">Identity & Logo</h3>
+                      <h3 className="text-sm font-bold text-white/90">Identity & Layout</h3>
                       <label className="block">
                         <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">Main Logo</span>
                         <input type="file" className="mt-2 block w-full text-xs text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-white/10 file:text-white hover:file:bg-white/20" onChange={(e) => handleImageUpload(e, (url) => setCompetition({...competition, logo: url}))} />
+                      </label>
+                      <label className="block">
+                        <div className="flex justify-between">
+                          <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">Logo Size</span>
+                          <span className="text-[10px] text-aqua-primary">{competition.logoSize}%</span>
+                        </div>
+                        <input 
+                          type="range" min="50" max="150" value={competition.logoSize} 
+                          onChange={(e) => setCompetition({...competition, logoSize: parseInt(e.target.value)})}
+                          className="w-full mt-2 accent-aqua-primary cursor-pointer"
+                        />
+                      </label>
+                      <label className="block">
+                        <div className="flex justify-between">
+                          <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">Participant Photo Size</span>
+                          <span className="text-[10px] text-aqua-primary">{competition.participantSize}%</span>
+                        </div>
+                        <input 
+                          type="range" min="50" max="150" value={competition.participantSize} 
+                          onChange={(e) => setCompetition({...competition, participantSize: parseInt(e.target.value)})}
+                          className="w-full mt-2 accent-aqua-primary cursor-pointer"
+                        />
+                      </label>
+                      <label className="block">
+                        <div className="flex justify-between">
+                          <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">Photo Spacing</span>
+                          <span className="text-[10px] text-aqua-primary">{competition.participantSpacing}px</span>
+                        </div>
+                        <input 
+                          type="range" min="0" max="60" value={competition.participantSpacing} 
+                          onChange={(e) => setCompetition({...competition, participantSpacing: parseInt(e.target.value)})}
+                          className="w-full mt-2 accent-aqua-primary cursor-pointer"
+                        />
                       </label>
                     </div>
 
@@ -594,7 +696,9 @@ export default function App() {
                     </div>
 
                     <div className="glass-card p-6 rounded-[20px] space-y-4">
-                      <h3 className="text-sm font-bold text-white/90">Participants ({competition.participants.length}/7)</h3>
+                      <h3 className="text-sm font-bold text-white/90">
+                        {competition.competitionType === 'winners' ? 'Winner Profiles (First 2 only)' : `Participants (${competition.participants.length}/7)`}
+                      </h3>
                       <div className="space-y-4">
                         {competition.participants.map((p, idx) => (
                           <div key={idx} className="p-3 bg-black/20 rounded-xl border border-white/5 space-y-3">
@@ -750,9 +854,10 @@ export default function App() {
                    <div className="overflow-hidden rounded-[22px]">
                    {mode === 'markhor' && <MarkhorTalent data={markhor} containerRef={previewRef} />}
                    {mode === 'skyronix' && <Skyronix data={skyronix} containerRef={previewRef} />}
-                   {mode === 'research' && <ResearchCreator data={research} onGenerate={handleGenerateResearch} isProcessing={isProcessing} containerRef={previewRef} />}
+                   {mode === 'research' && <ResearchCreator data={research} onGenerate={handleGenerateResearch} onGenerateSeries={handleGenerateSeries} isProcessing={isProcessing} containerRef={previewRef} />}
                    {mode === 'general' && <GeneralCreator data={general} containerRef={previewRef} onSend={(text) => handleGenerateGeneral(text)} isProcessing={isProcessing} />}
                    {mode === 'competition' && <CompetitionTemplate data={competition} containerRef={previewRef} />}
+                   {mode === 'tracker' && <ProfileTracker data={tracker} onSearch={handleTrackerSearch} isProcessing={isProcessing} />}
                   </div>
                </div>
               </div>

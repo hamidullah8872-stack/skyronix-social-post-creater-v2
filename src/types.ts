@@ -50,6 +50,7 @@ export interface MarkhorData {
   topRightLogo: string | null;
   optionalTopText: string;
   aspectRatio: '1/1' | '4/5' | '9/16';
+  contentFontSize: number;
 }
 
 export interface SkyronixPoint {

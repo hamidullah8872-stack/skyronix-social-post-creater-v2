@@ -58,7 +58,8 @@ export default function App() {
     logo: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=200&h=200&auto=format&fit=crop", // Elegant Gold/Dark placeholder for Markhor
     topRightLogo: null,
     optionalTopText: "",
-    aspectRatio: '9/16'
+    aspectRatio: '9/16',
+    contentFontSize: 100
   });
 
   // Skyronix State
@@ -427,6 +428,17 @@ export default function App() {
                           value={markhor.content}
                           onChange={(e) => setMarkhor({...markhor, content: e.target.value})}
                           className="mt-2 w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm focus:border-aqua-primary outline-none transition-all h-28"
+                        />
+                      </label>
+                      <label className="block">
+                        <div className="flex justify-between">
+                          <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">Text Size</span>
+                          <span className="text-[10px] text-gold-primary">{markhor.contentFontSize}%</span>
+                        </div>
+                        <input 
+                          type="range" min="50" max="250" value={markhor.contentFontSize} 
+                          onChange={(e) => setMarkhor({...markhor, contentFontSize: parseInt(e.target.value)})}
+                          className="w-full mt-2 accent-gold-primary cursor-pointer"
                         />
                       </label>
                     </div>

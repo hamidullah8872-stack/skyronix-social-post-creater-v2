@@ -37,8 +37,8 @@ export default function MarkhorTalent({ data, containerRef }: Props) {
       className={`relative w-full ${aspectClass} bg-neutral-900 overflow-hidden shadow-2xl flex flex-col font-sans transition-all duration-300`}
       id="markhor-template"
     >
-      {/* Top Section: Person Picture (Fixed 70% height) */}
-      <div className="relative h-[70%] w-full overflow-hidden bg-neutral-800 shrink-0">
+      {/* Top Section: Person Picture (Fixed 60% height) */}
+      <div className="relative h-[60%] w-full overflow-hidden bg-neutral-800 shrink-0">
         {data.personImage ? (
           <img 
             src={data.personImage} 
@@ -81,22 +81,28 @@ export default function MarkhorTalent({ data, containerRef }: Props) {
         </div>
       </div>
 
-      {/* Bottom Section: Text and Social Media Logos (Strictly 30% height) */}
-      <div className="relative h-[30%] w-full bg-gradient-to-b from-white/10 via-black/95 to-black border-t border-white/10 flex flex-col items-center justify-between py-6 px-4 md:py-8 md:px-6 text-center overflow-hidden shrink-0">
+      {/* Bottom Section: Text and Social Media Logos (Strictly 40% height) */}
+      <div className="relative h-[40%] w-full bg-gradient-to-b from-white/10 via-black/95 to-black border-t border-white/10 flex flex-col items-center justify-between py-6 px-4 md:py-8 md:px-6 text-center overflow-hidden shrink-0">
         {/* Subtle top edge glow */}
         <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-white/40 to-transparent blur-[1px]" />
         
         {/* Main Content Area: Centered and adjustable */}
-        <div className="flex-1 w-full flex flex-col items-center justify-center min-h-0 px-2">
+        <div className="flex-1 w-full flex flex-col items-center justify-center min-h-0 px-2 mt-2">
           <motion.div
              initial={{ opacity: 0, scale: 0.95 }}
              animate={{ opacity: 1, scale: 1 }}
-             className="w-full overflow-y-auto custom-scrollbar flex flex-col items-center justify-center px-4"
+             className="w-full h-full overflow-y-auto custom-scrollbar flex flex-col items-center justify-center px-4"
           >
-            <div className={`text-white font-display font-black leading-[1.1] drop-shadow-2xl uppercase break-words text-center
-              ${data.aspectRatio === '9/16' 
-                ? 'text-4xl md:text-5xl' 
-                : 'text-3xl md:text-4xl'}`}
+            {/* Auto-scaling base: 
+                - Base size depends on aspectRatio
+                - Scales down based on content length
+                - Multiplied by user-defined contentFontSize (as a percentage)
+            */}
+            <div 
+              style={{ 
+                fontSize: `${Math.max(12, (data.aspectRatio === '9/16' ? 44 : 32) * (1 - Math.min(0.5, data.content.length / 400)) * (data.contentFontSize / 100))}px` 
+              }}
+              className="text-white font-display font-black leading-[1.1] drop-shadow-2xl uppercase break-words text-center"
             >
               {renderTextWithHighlights(data.content)}
             </div>

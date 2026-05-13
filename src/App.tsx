@@ -20,6 +20,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
+import { GoogleGenAI, Type } from "@google/genai";
 import { AppMode, MarkhorData, SkyronixData, GeneralData, ResearchData, CompetitionData, Participant, TrackerData } from './types';
 import MarkhorTalent from './components/MarkhorTalent';
 import Skyronix from './components/Skyronix';
@@ -64,44 +65,82 @@ export default function App() {
 
   // Skyronix State
   const [skyronix, setSkyronix] = useState<SkyronixData>({
-    userImage: null,
-    name: "Hamid Ullah",
-    description: "Digital Marketing Expert with Ai integration",
-    content: "The importance of personal branding. Trust and value are the most important things. Trust is something you tell the audience and it must be true. Value is what you give your audience through product or service.",
-    title: "The Importance of Personal Branding",
-    subHeadline: "In personal branding the most important thing is Trust and Value",
+    rawScript: "Social media is evolving. If you're not using AI for your business, you're leaving money on the table. Automation isn't just about saving time; it's about scaling your systems so you can focus on high-level strategy. Here are 3 ways to start: 1. Use AI for content ideation. 2. Automate your lead follow-up. 3. Use data-driven insights for ads. Start today.",
+    hook: "AI-POWERED BUSINESS GROWTH",
     points: [
-      { title: "Trust", description: "Trust is something that what you tell the audience and what you give to the audience must true.", iconType: 'shield' },
-      { title: "Value", description: "And value is what you give to your audience, if you give a service or product your audience must get value.", iconType: 'diamond' }
+      { title: "CONTENT IDEATION", description: "Use neural networks for 24/7 creativity." },
+      { title: "LEAD AUTOMATION", description: "Scale your follow-up with zero friction." },
+      { title: "DATA INSIGHTS", description: "Optimize ads with predictive analytics." }
     ],
-    summary: "These two combinations work really well, so become trustable and give value to others.",
+    cta: "SCALE YOUR SYSTEMS TODAY",
+    layoutStyle: 'card',
     aspectRatio: '1/1',
-    brandLogo: null
+    isProcessing: false
   });
 
-  const handleSummarizeSkyronix = async () => {
-    if (!skyronix.content) return;
-    setIsProcessing(true);
+  const handleSkyronixAI = async () => {
+    if (!skyronix.rawScript.trim()) return;
+    
+    setSkyronix(prev => ({ ...prev, isProcessing: true }));
+    
     try {
-      const result = await generateSkyronixPoints(skyronix.content);
-      
-      setSkyronix(prev => ({ 
-        ...prev, 
-        title: result.title,
-        subHeadline: result.subHeadline,
-        points: result.points,
-        summary: result.summary
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: `You are a premium-level visual designer specialized in social media graphics. 
+        Analyze the following raw script and extract:
+        1. A strong HOOK (short, punchy title)
+        2. 3-5 key points (each with a short title and a one-sentence high-impact description)
+        3. A clear CTA (Call To Action)
+
+        Rules:
+        - Use simple, high-impact language.
+        - Tone: Modern, professional, and minimal.
+        - Output strictly in JSON format.
+
+        Script: "${skyronix.rawScript}"`,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              hook: { type: Type.STRING },
+              points: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    title: { type: Type.STRING },
+                    description: { type: Type.STRING }
+                  },
+                  required: ["title", "description"]
+                }
+              },
+              cta: { type: Type.STRING }
+            },
+            required: ["hook", "points", "cta"]
+          }
+        }
+      });
+
+      const result = JSON.parse(response.text);
+      const layouts: ('card' | 'split' | 'center' | 'dashboard' | 'notebook')[] = ['card', 'split', 'center', 'dashboard', 'notebook'];
+      const randomLayout = layouts[Math.floor(Math.random() * layouts.length)];
+
+      setSkyronix(prev => ({
+        ...prev,
+        hook: result.hook.toUpperCase(),
+        points: result.points.map((p: any) => ({
+          title: p.title.toUpperCase(),
+          description: p.description
+        })),
+        cta: result.cta.toUpperCase(),
+        layoutStyle: randomLayout,
+        isProcessing: false
       }));
-    } catch (err) {
-      console.error('Extraction failed', err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      if (errorMessage.includes('API Key is missing')) {
-        alert(errorMessage);
-      } else {
-        alert(`AI Extraction failed: ${errorMessage}\n\nPlease try a simpler text or check your internet connection.`);
-      }
-    } finally {
-      setIsProcessing(false);
+    } catch (error) {
+      console.error("Gemini AI failed:", error);
+      setSkyronix(prev => ({ ...prev, isProcessing: false }));
     }
   };
 
@@ -473,8 +512,43 @@ export default function App() {
 
                 {mode === 'skyronix' && (
                   <div className="space-y-6">
+                    <div className="glass-card p-6 rounded-[20px] space-y-4 text-center">
+                       <Zap className="mx-auto text-aqua-primary" size={32} />
+                       <h2 className="text-xl font-display font-black text-white italic tracking-widest uppercase">Skyronix AI</h2>
+                       <p className="text-[10px] text-white/40 uppercase font-black tracking-widest leading-relaxed">
+                          Premium Visual Design Engine
+                       </p>
+                    </div>
+
                     <div className="glass-card p-6 rounded-[20px] space-y-4">
-                      <h3 className="text-sm font-bold text-white/90">Platform Compatibility</h3>
+                      <h3 className="text-sm font-bold text-white/90">AI Script Input</h3>
+                      <textarea 
+                        value={skyronix.rawScript}
+                        onChange={(e) => setSkyronix({...skyronix, rawScript: e.target.value})}
+                        placeholder="Paste your raw script here..."
+                        className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white/80 focus:border-aqua-primary outline-none transition-all h-40 resize-none custom-scrollbar"
+                      />
+                      <button 
+                        onClick={handleSkyronixAI}
+                        disabled={skyronix.isProcessing}
+                        className={`w-full py-4 rounded-xl flex items-center justify-center gap-3 font-black uppercase tracking-widest transition-all ${skyronix.isProcessing ? 'bg-neutral-800 text-neutral-500 italic' : 'bg-aqua-primary text-black hover:scale-[1.02] active:scale-[0.98]'}`}
+                      >
+                        {skyronix.isProcessing ? (
+                          <>
+                            <RefreshCw className="animate-spin" size={18} />
+                            Architecting Visuals...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles size={18} />
+                            Generate Premium Design
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="glass-card p-6 rounded-[20px] space-y-4">
+                      <h3 className="text-sm font-bold text-white/90">Platform Scaling</h3>
                       <div className="flex gap-2 p-1 bg-black/20 rounded-xl">
                         {[
                           { id: '1/1', label: 'Square', sub: '1:1' },
@@ -484,68 +558,24 @@ export default function App() {
                           <button 
                             key={ratio.id}
                             onClick={() => setSkyronix({...skyronix, aspectRatio: ratio.id as any})}
-                            className={`flex-1 flex flex-col items-center py-2 rounded-lg transition-all ${skyronix.aspectRatio === ratio.id ? 'bg-white/10 text-white shadow-lg' : 'bg-transparent text-neutral-500 hover:text-neutral-300'}`}
+                            className={`flex-1 flex flex-col items-center py-2 rounded-lg transition-all ${skyronix.aspectRatio === ratio.id ? 'bg-aqua-primary text-black shadow-lg shadow-aqua-primary/20' : 'bg-transparent text-neutral-500 hover:text-neutral-300'}`}
                           >
                             <span className="text-[9px] font-black uppercase tracking-tight">{ratio.label}</span>
                             <span className="text-[8px] opacity-50">{ratio.sub}</span>
                           </button>
                         ))}
                       </div>
-                    </div>
-
-                    <div className="glass-card p-6 rounded-[20px] space-y-4">
-                      <h3 className="text-sm font-bold text-white/90">Identity</h3>
-                      <label className="block">
-                        <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">Profile Name</span>
-                        <input 
-                          value={skyronix.name}
-                          onChange={(e) => setSkyronix({...skyronix, name: e.target.value})}
-                          className="mt-2 w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm focus:border-aqua-primary outline-none transition-all"
-                        />
-                      </label>
-                      <label className="block">
-                        <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">Specialization</span>
-                        <input 
-                          value={skyronix.description}
-                          onChange={(e) => setSkyronix({...skyronix, description: e.target.value})}
-                          className="mt-2 w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm focus:border-aqua-primary outline-none transition-all"
-                        />
-                      </label>
-                    </div>
-
-                    <div className="glass-card p-6 rounded-[20px] space-y-4">
-                      <h3 className="text-sm font-bold text-white/90">Visuals</h3>
-                      <div>
-                        <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">Display Photo</span>
-                        <div className="mt-2 flex items-center justify-center h-24 w-24 bg-black/20 border border-dashed border-white/10 rounded-full hover:border-aqua-primary transition-colors relative cursor-pointer group overflow-hidden">
-                          {skyronix.userImage ? (
-                            <img src={skyronix.userImage} alt="Preview" className="w-full h-full object-cover" crossOrigin="anonymous" />
-                          ) : (
-                            <ImageIcon size={20} className="text-neutral-500" />
-                          )}
-                          <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleImageUpload(e, (url) => setSkyronix({...skyronix, userImage: url}))} />
-                        </div>
-                      </div>
-                      <label className="block">
-                        <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">Brand Logo (Footer)</span>
-                        <input type="file" className="mt-2 block w-full text-xs text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-white/10 file:text-white hover:file:bg-white/20" onChange={(e) => handleImageUpload(e, (url) => setSkyronix({...skyronix, brandLogo: url}))} />
-                      </label>
-                      <label className="block">
-                        <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">Full Narrative</span>
-                        <textarea 
-                          value={skyronix.content}
-                          onChange={(e) => setSkyronix({...skyronix, content: e.target.value})}
-                          placeholder="Enter your full message here..."
-                          className="mt-2 w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm focus:border-aqua-primary outline-none transition-all h-24"
-                        />
-                      </label>
                       <button 
-                        onClick={handleSummarizeSkyronix}
-                        disabled={isProcessing || !skyronix.content}
-                        className="w-full bg-gold-primary/20 border border-gold-primary text-gold-primary font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gold-primary hover:text-black transition-all disabled:opacity-50 uppercase text-[10px] tracking-widest"
+                        onClick={() => {
+                          const layouts: SkyronixData['layoutStyle'][] = ['card', 'split', 'center', 'dashboard', 'notebook'];
+                          const currentIdx = layouts.indexOf(skyronix.layoutStyle);
+                          const nextIdx = (currentIdx + 1) % layouts.length;
+                          setSkyronix(prev => ({ ...prev, layoutStyle: layouts[nextIdx] }));
+                        }}
+                        className="w-full py-3 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/60 hover:bg-white/5 transition-all flex items-center justify-center gap-2"
                       >
-                        {isProcessing ? <RefreshCw className="animate-spin" size={16} /> : <Sparkles size={16} />}
-                        <span>Extract Main Points</span>
+                        <RefreshCw size={12} />
+                        Cycle Layout Style: {skyronix.layoutStyle}
                       </button>
                     </div>
                   </div>
@@ -604,13 +634,14 @@ export default function App() {
                       <h3 className="text-sm font-bold text-white/90">Competition Mode</h3>
                       <div className="flex gap-2 p-1 bg-black/20 rounded-xl">
                         {[
-                          { id: 'weekly', label: 'Weekly Voting' },
-                          { id: 'winners', label: 'Winners Circle' }
+                          { id: 'weekly', label: 'Weekly' },
+                          { id: 'winners', label: 'Winners' },
+                          { id: 'award', label: 'Monthly Award' }
                         ].map((type) => (
                           <button 
                             key={type.id}
                             onClick={() => setCompetition({...competition, competitionType: type.id as any})}
-                            className={`flex-1 py-3 rounded-lg transition-all text-[10px] font-black uppercase tracking-widest ${competition.competitionType === type.id ? 'bg-aqua-primary text-black shadow-lg shadow-aqua-primary/20' : 'bg-transparent text-neutral-500 hover:text-neutral-300'}`}
+                            className={`flex-1 py-3 rounded-lg transition-all text-[9.5px] font-black uppercase tracking-tight ${competition.competitionType === type.id ? 'bg-aqua-primary text-black shadow-lg shadow-aqua-primary/20' : 'bg-transparent text-neutral-500 hover:text-neutral-300'}`}
                           >
                             {type.label}
                           </button>
@@ -709,7 +740,7 @@ export default function App() {
 
                     <div className="glass-card p-6 rounded-[20px] space-y-4">
                       <h3 className="text-sm font-bold text-white/90">
-                        {competition.competitionType === 'winners' ? 'Winner Profiles (First 2 only)' : `Participants (${competition.participants.length}/7)`}
+                        {competition.competitionType === 'winners' ? 'Winner Profiles (First 2 only)' : competition.competitionType === 'award' ? 'Award Recipient (First only)' : `Participants (${competition.participants.length}/7)`}
                       </h3>
                       <div className="space-y-4">
                         {competition.participants.map((p, idx) => (
@@ -780,10 +811,13 @@ export default function App() {
                         />
                       </label>
                       <label className="block">
-                        <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">Timer Label</span>
+                        <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/40">
+                          {competition.competitionType === 'award' ? 'Award Month (e.g. MAY 2026)' : 'Timer Label'}
+                        </span>
                         <input 
                           value={competition.timerText}
                           onChange={(e) => setCompetition({...competition, timerText: e.target.value})}
+                          placeholder={competition.competitionType === 'award' ? "MAY 2026" : "ONLY 48 HOURS LEFT"}
                           className="mt-2 w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm focus:border-aqua-primary outline-none transition-all"
                         />
                       </label>

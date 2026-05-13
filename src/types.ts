@@ -40,7 +40,7 @@ export interface CompetitionData {
   participantSize: number;
   participantSpacing: number;
   logoSize: number;
-  competitionType: 'weekly' | 'winners';
+  competitionType: 'weekly' | 'winners' | 'award';
 }
 
 export interface MarkhorData {
@@ -56,20 +56,16 @@ export interface MarkhorData {
 export interface SkyronixPoint {
   title: string;
   description: string;
-  iconType: 'shield' | 'diamond' | 'star' | 'rocket' | 'check' | 'lightbulb' | 'zap' | 'target' | 'trophy' | 'award' | 'laptop' | 'globe' | 'trending' | 'search' | 'activity' | 'cpu';
 }
 
 export interface SkyronixData {
-  userImage: string | null;
-  name: string;
-  description: string;
-  content: string;
-  title?: string;
-  subHeadline?: string;
-  points?: SkyronixPoint[];
-  summary?: string;
+  rawScript: string;
+  hook: string;
+  points: SkyronixPoint[];
+  cta: string;
+  layoutStyle: 'card' | 'split' | 'center' | 'dashboard' | 'notebook';
   aspectRatio: '1/1' | '4/5' | '9/16';
-  brandLogo: string | null;
+  isProcessing: boolean;
 }
 
 export interface ChatMessage {
